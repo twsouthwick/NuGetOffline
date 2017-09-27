@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using System;
 using System.Threading.Tasks;
 
 namespace NuGetOffline
@@ -10,15 +11,30 @@ namespace NuGetOffline
     {
         private static async Task Main(string[] args)
         {
-            using (var container = CreateContainer())
+            try
             {
-                await container.Resolve<NuGetOfflineDownloader>().RunAsync();
+                var options = DownloadOptionsBuilder.Parse(args);
+
+                using (var container = CreateContainer(options))
+                {
+                    await container.Resolve<NuGetOfflineDownloader>().RunAsync();
+                }
+            }
+            catch (NuGetDownloaderException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
             }
         }
 
-        private static IContainer CreateContainer()
+        private static IContainer CreateContainer(DownloadOptions options)
         {
             var builder = new ContainerBuilder();
+
+            builder.RegisterInstance(options);
 
             builder.RegisterType<NuGetOfflineDownloader>()
                 .AsSelf()
