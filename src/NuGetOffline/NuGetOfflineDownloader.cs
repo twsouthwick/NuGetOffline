@@ -1,10 +1,12 @@
 ﻿using NuGet.Common;
 using NuGet.Frameworks;
 using NuGet.Packaging;
+using NuGet.Packaging.Core;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -24,6 +26,7 @@ namespace NuGetOffline
         private readonly HttpHandlerResourceV3 _httpResource;
         private readonly SourceRepository _repository;
         private readonly ILogger _logger;
+        private readonly FrameworkReducer _reducer = new FrameworkReducer();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="NuGetOfflineDownloader"/> class.
@@ -47,46 +50,94 @@ namespace NuGetOffline
             _handler.Dispose();
         }
 
+        private NuGetFramework GetFrameworkVersion()
+        {
+            return NuGetFramework.ParseFolder(_options.Framework, DefaultFrameworkNameProvider.Instance);
+        }
+
         /// <summary>
         /// Entry point for main application logic called from <see cref="Program.Main(string[])"/>
         /// </summary>
         public async Task RunAsync(IFolder folder, CancellationToken token)
         {
-            var package = await GetPackageAsync(token);
+            var packages = await GetAllPackagesAsync(token);
 
-            var frameworks = package.GetSupportedFrameworks();
-            var reducer = new FrameworkReducer();
-            var desired = NuGetFramework.ParseFolder(_options.Framework, DefaultFrameworkNameProvider.Instance);
-            var needed = reducer.GetNearest(desired, frameworks);
-
-            var libs = package.GetLibItems()
-                .Where(item => item.TargetFramework == needed)
-                .SelectMany(item => item.Items);
-            var build = package.GetBuildItems()
-                .Where(item => item.TargetFramework == needed)
-                .SelectMany(item => item.Items);
-
-            var items = libs.Concat(build);
-
-            foreach (var item in items)
+            foreach (var package in packages)
             {
-                using (var stream = package.GetStream(item))
-                {
-                    var name = Path.GetFileName(item);
-                    var itemPath = Path.Combine(_options.Name, _options.Version, name);
+                var id = package.NuspecReader.GetId();
+                var version = package.NuspecReader.GetVersion();
 
-                    await folder.AddAsync(itemPath, stream);
+                Console.WriteLine($"Adding {id}");
+
+                var frameworks = package.GetSupportedFrameworks();
+                var needed = _reducer.GetNearest(GetFrameworkVersion(), frameworks);
+
+                var libs = package.GetLibItems()
+                    .Where(item => item.TargetFramework == needed)
+                    .SelectMany(item => item.Items);
+                var build = package.GetBuildItems()
+                    .Where(item => item.TargetFramework == needed)
+                    .SelectMany(item => item.Items);
+
+                var items = libs.Concat(build).ToList();
+
+                foreach (var item in items)
+                {
+                    using (var stream = package.GetStream(item))
+                    {
+                        var itemPath = Path.Combine(id, version.ToString(), item);
+
+                        await folder.AddAsync(itemPath, stream);
+                    }
                 }
             }
         }
 
-        private async Task<PackageArchiveReader> GetPackageAsync(CancellationToken token)
+        private static bool Equals(NuGetFramework framework1, NuGetFramework framework2)
+        {
+            return DefaultFrameworkNameProvider.Instance.CompareEquivalentFrameworks(framework1, framework2) == 0;
+        }
+
+        private async Task<IEnumerable<PackageArchiveReader>> GetAllPackagesAsync(CancellationToken token)
         {
             var finder = await _repository.GetResourceAsync<FindPackageByIdResource>();
-            var nugetVersion = NuGetVersion.Parse(_options.Version);
+            var downloadQueue = new Queue<(string name, NuGetVersion version)>();
+            downloadQueue.Enqueue((_options.Name, NuGetVersion.Parse(_options.Version)));
+            var v = NuGetVersion.Parse(_options.Version);
+            var seen = new HashSet<string>();
+            var result = new List<PackageArchiveReader>();
+            var needed = GetFrameworkVersion();
+
+            while (downloadQueue.Any())
+            {
+                var entry = downloadQueue.Dequeue();
+                var package = await GetPackageAsync(entry.name, entry.version, token);
+
+                result.Add(package);
+
+                var dependencies = package.GetPackageDependencies()
+                    .Where(item => Equals(item.TargetFramework, needed))
+                    .SelectMany(item => item.Packages)
+                    .ToList();
+
+                foreach (var dependency in dependencies)
+                {
+                    var versions = await finder.GetAllVersionsAsync(dependency.Id, _cache, _logger, token);
+                    var version = dependency.VersionRange.FindBestMatch(versions);
+
+                    downloadQueue.Enqueue((dependency.Id, version));
+                }
+            }
+
+            return result;
+        }
+
+        private async Task<PackageArchiveReader> GetPackageAsync(string name, NuGetVersion version, CancellationToken token)
+        {
+            var finder = await _repository.GetResourceAsync<FindPackageByIdResource>();
             var ms = new MemoryStream();
 
-            if (await finder.CopyNupkgToStreamAsync(_options.Name, nugetVersion, ms, _cache, _logger, token))
+            if (await finder.CopyNupkgToStreamAsync(name, version, ms, _cache, _logger, token))
             {
                 ms.Position = 0;
 
