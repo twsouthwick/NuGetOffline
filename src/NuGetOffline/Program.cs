@@ -21,7 +21,11 @@ namespace NuGetOffline
 
                 using (var container = CreateContainer(options))
                 {
-                    await container.Resolve<NuGetOfflineDownloader>().RunAsync(options, new FileSystemFolder(), CancellationToken.None);
+                    var folder = container.Resolve<IFolder>();
+
+                    await container.Resolve<NuGetOfflineDownloader>().RunAsync(options, folder, CancellationToken.None);
+
+                    await folder.SaveAsync();
                 }
             }
             catch (NuGetDownloaderException e)
@@ -52,6 +56,13 @@ namespace NuGetOffline
 
             builder.RegisterType<NuGetTextWriterLogger>()
                 .As<ILogger>()
+                .SingleInstance();
+
+            builder.RegisterType<FileSystemFolder>()
+                .Named<IFolder>(nameof(IFolder))
+                .SingleInstance();
+
+            builder.RegisterDecorator<IFolder>(t => new MsbuildFileBuilder(t), nameof(IFolder))
                 .SingleInstance();
 
             return builder.Build();

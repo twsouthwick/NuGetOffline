@@ -43,5 +43,8 @@ namespace NuGetOffline
                 await stream.CopyToAsync(fs);
             }
         }
+
+        /// <inheritdoc/>
+        public Task SaveAsync() => Task.CompletedTask;
     }
 }
