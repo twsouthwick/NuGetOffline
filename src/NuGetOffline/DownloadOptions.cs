@@ -6,6 +6,11 @@
     public class DownloadOptions
     {
         /// <summary>
+        /// The NuGet feed to use
+        /// </summary>
+        public string Feed { get; set; }
+
+        /// <summary>
         /// Gets or sets the framework that is being targeted
         /// </summary>
         public string Framework { get; set; }

@@ -18,12 +18,14 @@ namespace NuGetOffline
             string framework = null;
             string version = null;
             string name = null;
+            string feed = @"https://api.nuget.org/v3/index.json";
 
             var syntax = ArgumentSyntax.Parse(args, arg =>
             {
                 arg.DefineOption("framework", ref framework, true, ".NET Target Framework Moniker");
                 arg.DefineOption("name", ref name, true, "Name of NuGet package to download");
                 arg.DefineOption("version", ref version, true, "Version of NuGet package");
+                arg.DefineOption("feed", ref feed, false, "NuGet feed to use");
             });
 
             if (string.IsNullOrWhiteSpace(framework))
@@ -41,8 +43,14 @@ namespace NuGetOffline
                 throw new ArgumentParsingException(syntax, "Must supply a NuGet package version");
             }
 
+            if (string.IsNullOrWhiteSpace(feed))
+            {
+                throw new ArgumentParsingException(syntax, "Must supply a NuGet package feed");
+            }
+
             return new DownloadOptions
             {
+                Feed = feed,
                 Framework = framework,
                 Version = version,
                 Name = name

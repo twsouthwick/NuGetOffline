@@ -7,6 +7,8 @@
 
   <ItemGroup>
     <PackageReference Include="Autofac" Version="4.6.1" />
+    <PackageReference Include="NuGet.Client" Version="4.2.0" />
+    <PackageReference Include="NuGet.Protocol.Core.v3" Version="4.2.0" />
     <PackageReference Include="System.CommandLine" Version="0.1.0-e170406-3" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "NuGetOffline": {
+      "commandName": "Project",
+      "commandLineArgs": "--framework net40 --name DocumentFormat.OpenXML --version 2.7.2"
+    }
+  }
+}

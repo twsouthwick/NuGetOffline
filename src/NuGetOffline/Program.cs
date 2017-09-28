@@ -1,5 +1,9 @@
 ﻿using Autofac;
+using NuGet.Common;
+using NuGet.Protocol.Core.Types;
 using System;
+using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NuGetOffline
@@ -17,7 +21,7 @@ namespace NuGetOffline
 
                 using (var container = CreateContainer(options))
                 {
-                    await container.Resolve<NuGetOfflineDownloader>().RunAsync();
+                    await container.Resolve<NuGetOfflineDownloader>().RunAsync(new FileSystemFolder(), CancellationToken.None);
                 }
             }
             catch (NuGetDownloaderException e)
@@ -36,9 +40,19 @@ namespace NuGetOffline
 
             builder.RegisterInstance(options);
 
+            builder.RegisterType<SourceCacheContext>()
+                .SingleInstance();
+
             builder.RegisterType<NuGetOfflineDownloader>()
-                .AsSelf()
-                .InstancePerLifetimeScope();
+                 .AsSelf()
+                 .InstancePerLifetimeScope();
+
+            builder.RegisterInstance(Console.Out)
+                .As<TextWriter>();
+
+            builder.RegisterType<NuGetTextWriterLogger>()
+                .As<ILogger>()
+                .SingleInstance();
 
             return builder.Build();
         }
