@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 
 namespace NuGetOffline
 {
-
     /// <summary>
     /// An implementation of <see cref="IFolder"/> that uses the filesystem
     /// </summary>

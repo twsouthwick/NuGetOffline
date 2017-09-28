@@ -21,7 +21,7 @@ namespace NuGetOffline
 
                 using (var container = CreateContainer(options))
                 {
-                    await container.Resolve<NuGetOfflineDownloader>().RunAsync(new FileSystemFolder(), CancellationToken.None);
+                    await container.Resolve<NuGetOfflineDownloader>().RunAsync(options, new FileSystemFolder(), CancellationToken.None);
                 }
             }
             catch (NuGetDownloaderException e)

@@ -20,7 +20,6 @@ namespace NuGetOffline
     /// </summary>
     public sealed class NuGetOfflineDownloader : IDisposable
     {
-        private readonly DownloadOptions _options;
         private readonly SourceCacheContext _cache;
         private readonly HttpClientHandler _handler;
         private readonly HttpHandlerResourceV3 _httpResource;
@@ -34,7 +33,6 @@ namespace NuGetOffline
         /// <param name="options">The options to be used while downloading</param>
         public NuGetOfflineDownloader(DownloadOptions options, SourceCacheContext context, ILogger logger)
         {
-            _options = options;
             _cache = context;
             _handler = new HttpClientHandler();
             _httpResource = new HttpHandlerResourceV3(_handler, _handler);
@@ -50,17 +48,13 @@ namespace NuGetOffline
             _handler.Dispose();
         }
 
-        private NuGetFramework GetFrameworkVersion()
-        {
-            return NuGetFramework.ParseFolder(_options.Framework, DefaultFrameworkNameProvider.Instance);
-        }
-
         /// <summary>
         /// Entry point for main application logic called from <see cref="Program.Main(string[])"/>
         /// </summary>
-        public async Task RunAsync(IFolder folder, CancellationToken token)
+        public async Task RunAsync(DownloadOptions options, IFolder folder, CancellationToken token)
         {
-            var packages = await GetAllPackagesAsync(token);
+            var desiredFramework = NuGetFramework.ParseFolder(options.Framework, DefaultFrameworkNameProvider.Instance);
+            var packages = await GetAllPackagesAsync(options, desiredFramework, token);
 
             foreach (var package in packages)
             {
@@ -70,7 +64,7 @@ namespace NuGetOffline
                 Console.WriteLine($"Adding {id}");
 
                 var frameworks = package.GetSupportedFrameworks();
-                var needed = _reducer.GetNearest(GetFrameworkVersion(), frameworks);
+                var needed = _reducer.GetNearest(desiredFramework, frameworks);
 
                 var libs = package.GetLibItems()
                     .Where(item => item.TargetFramework == needed)
@@ -98,15 +92,14 @@ namespace NuGetOffline
             return DefaultFrameworkNameProvider.Instance.CompareEquivalentFrameworks(framework1, framework2) == 0;
         }
 
-        private async Task<IEnumerable<PackageArchiveReader>> GetAllPackagesAsync(CancellationToken token)
+        private async Task<IEnumerable<PackageArchiveReader>> GetAllPackagesAsync(DownloadOptions options, NuGetFramework desiredFramework, CancellationToken token)
         {
             var finder = await _repository.GetResourceAsync<FindPackageByIdResource>();
             var downloadQueue = new Queue<(string name, NuGetVersion version)>();
-            downloadQueue.Enqueue((_options.Name, NuGetVersion.Parse(_options.Version)));
-            var v = NuGetVersion.Parse(_options.Version);
+            downloadQueue.Enqueue((options.Name, NuGetVersion.Parse(options.Version)));
             var seen = new HashSet<string>();
+
             var result = new List<PackageArchiveReader>();
-            var needed = GetFrameworkVersion();
 
             while (downloadQueue.Any())
             {
@@ -116,7 +109,7 @@ namespace NuGetOffline
                 result.Add(package);
 
                 var dependencies = package.GetPackageDependencies()
-                    .Where(item => Equals(item.TargetFramework, needed))
+                    .Where(item => Equals(item.TargetFramework, desiredFramework))
                     .SelectMany(item => item.Packages)
                     .ToList();
 
@@ -144,7 +137,7 @@ namespace NuGetOffline
                 return new PackageArchiveReader(ms);
             }
 
-            throw new NuGetDownloaderException($"Could not find package {_options.Name}, v{_options.Version}");
+            throw new NuGetDownloaderException($"Could not find package {name}, v{version}");
         }
     }
 }
