@@ -24,5 +24,15 @@
         /// Gets or sets the name of the NuGet package desired
         /// </summary>
         public string Name { get; set; }
+
+        /// <summary>
+        /// Gets or sets the path to write the files to
+        /// </summary>
+        public string OutputPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether to zip results
+        /// </summary>
+        public bool ZipResults { get; set; }
     }
 }

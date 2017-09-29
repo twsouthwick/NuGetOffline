@@ -46,7 +46,7 @@ namespace NuGetOffline
         /// <inheritdoc/>
         public Task SaveAsync()
         {
-            return Task.CompletedTask;
+            return _other.SaveAsync();
         }
     }
 }

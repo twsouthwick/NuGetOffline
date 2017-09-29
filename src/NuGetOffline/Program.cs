@@ -51,15 +51,27 @@ namespace NuGetOffline
                  .AsSelf()
                  .InstancePerLifetimeScope();
 
+            builder.Register<IFolder>(ctx =>
+            {
+                var o = ctx.Resolve<DownloadOptions>();
+
+                if (o.ZipResults)
+                {
+                    return new ZipArchiveFolder(o.OutputPath);
+                }
+                else
+                {
+                    return new FileSystemFolder(o.OutputPath);
+                }
+            })
+            .Named<IFolder>(nameof(IFolder))
+            .SingleInstance();
+
             builder.RegisterInstance(Console.Out)
                 .As<TextWriter>();
 
             builder.RegisterType<NuGetTextWriterLogger>()
                 .As<ILogger>()
-                .SingleInstance();
-
-            builder.RegisterType<FileSystemFolder>()
-                .Named<IFolder>(nameof(IFolder))
                 .SingleInstance();
 
             builder.RegisterDecorator<IFolder>(t => new MsbuildFileBuilder(t), nameof(IFolder))

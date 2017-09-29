@@ -14,9 +14,9 @@ namespace NuGetOffline
         /// <summary>
         /// Initializes a new instance of the <see cref="FileSystemFolder"/> class.
         /// </summary>
-        public FileSystemFolder()
+        public FileSystemFolder(string path)
         {
-            _path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            _path = path ?? Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
             Directory.CreateDirectory(_path);
 

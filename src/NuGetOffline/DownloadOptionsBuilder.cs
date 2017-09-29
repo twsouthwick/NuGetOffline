@@ -1,5 +1,6 @@
 ﻿using System;
 using System.CommandLine;
+using System.IO;
 
 namespace NuGetOffline
 {
@@ -18,7 +19,9 @@ namespace NuGetOffline
             string framework = null;
             string version = null;
             string name = null;
-            string feed = @"https://api.nuget.org/v3/index.json";
+            string path = null;
+            var feed = @"https://api.nuget.org/v3/index.json";
+            var zip = false;
 
             var syntax = ArgumentSyntax.Parse(args, arg =>
             {
@@ -26,6 +29,8 @@ namespace NuGetOffline
                 arg.DefineOption("name", ref name, true, "Name of NuGet package to download");
                 arg.DefineOption("version", ref version, true, "Version of NuGet package");
                 arg.DefineOption("feed", ref feed, false, "NuGet feed to use");
+                arg.DefineOption("zip", ref zip, false, "Zip results");
+                arg.DefineOption("path", ref path, true, "Path to write output to");
             });
 
             if (string.IsNullOrWhiteSpace(framework))
@@ -48,12 +53,29 @@ namespace NuGetOffline
                 throw new ArgumentParsingException(syntax, "Must supply a NuGet package feed");
             }
 
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                throw new ArgumentParsingException(syntax, "Must supply a path");
+            }
+
+            if (File.Exists(path) || Directory.Exists(path))
+            {
+                throw new ArgumentParsingException(syntax, "Path already exists");
+            }
+
+            if (zip && !string.Equals(Path.GetExtension(path), ".zip", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentParsingException(syntax, "Path must end in '.zip' if a zip file is to be created");
+            }
+
             return new DownloadOptions
             {
                 Feed = feed,
                 Framework = framework,
+                Name = name,
+                OutputPath = path,
                 Version = version,
-                Name = name
+                ZipResults = zip,
             };
         }
 
