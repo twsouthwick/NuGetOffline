@@ -53,10 +53,12 @@ namespace NuGetOffline
                 throw new ArgumentParsingException(syntax, "Must supply a NuGet package feed");
             }
 
+#if !DEBUG
             if (string.IsNullOrWhiteSpace(path))
             {
                 throw new ArgumentParsingException(syntax, "Must supply a path");
             }
+#endif
 
             if (File.Exists(path) || Directory.Exists(path))
             {
