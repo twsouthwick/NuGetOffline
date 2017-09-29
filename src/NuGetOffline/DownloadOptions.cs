@@ -34,5 +34,10 @@
         /// Gets or sets whether to zip results
         /// </summary>
         public bool ZipResults { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether output is verbose
+        /// </summary>
+        public bool Verbose { get; set; }
     }
 }

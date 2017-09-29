@@ -10,17 +10,19 @@ namespace NuGetOffline
     public class FileSystemFolder : IFolder
     {
         private readonly string _path;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FileSystemFolder"/> class.
         /// </summary>
-        public FileSystemFolder(string path)
+        public FileSystemFolder(string path, ILogger logger)
         {
             _path = path ?? Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            _logger = logger;
 
             Directory.CreateDirectory(_path);
 
-            Console.WriteLine($"Using temp folder: {_path}");
+            _logger.Verbose($"Using output folder: {_path}");
         }
 
         /// <inheritdoc/>

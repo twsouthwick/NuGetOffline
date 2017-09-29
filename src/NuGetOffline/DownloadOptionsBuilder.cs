@@ -22,6 +22,7 @@ namespace NuGetOffline
             string path = null;
             var feed = @"https://api.nuget.org/v3/index.json";
             var zip = false;
+            var verbose = false;
 
             var syntax = ArgumentSyntax.Parse(args, arg =>
             {
@@ -31,6 +32,7 @@ namespace NuGetOffline
                 arg.DefineOption("feed", ref feed, false, "NuGet feed to use");
                 arg.DefineOption("zip", ref zip, false, "Zip results");
                 arg.DefineOption("path", ref path, true, "Path to write output to");
+                arg.DefineOption("verbose", ref verbose, false, "Turn verbosity on");
             });
 
             if (string.IsNullOrWhiteSpace(framework))
@@ -76,6 +78,7 @@ namespace NuGetOffline
                 Framework = framework,
                 Name = name,
                 OutputPath = path,
+                Verbose = verbose,
                 Version = version,
                 ZipResults = zip,
             };

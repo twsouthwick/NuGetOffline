@@ -1,5 +1,4 @@
-﻿using NuGet.Common;
-using NuGet.Frameworks;
+﻿using NuGet.Frameworks;
 using NuGet.Packaging;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
@@ -24,19 +23,21 @@ namespace NuGetOffline
         private readonly HttpHandlerResourceV3 _httpResource;
         private readonly SourceRepository _repository;
         private readonly ILogger _logger;
+        private readonly NuGet.Common.ILogger _nugetLogger;
         private readonly FrameworkReducer _reducer = new FrameworkReducer();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="NuGetOfflineDownloader"/> class.
         /// </summary>
         /// <param name="options">The options to be used while downloading</param>
-        public NuGetOfflineDownloader(DownloadOptions options, SourceCacheContext context, ILogger logger)
+        public NuGetOfflineDownloader(DownloadOptions options, SourceCacheContext context, ILogger logger, NuGet.Common.ILogger nugetLogger)
         {
             _cache = context;
             _handler = new HttpClientHandler();
             _httpResource = new HttpHandlerResourceV3(_handler, _handler);
             _repository = Repository.Factory.GetCoreV3(options.Feed);
             _logger = logger;
+            _nugetLogger = nugetLogger;
         }
 
         /// <summary>
@@ -60,7 +61,7 @@ namespace NuGetOffline
                 var id = package.NuspecReader.GetId();
                 var version = package.NuspecReader.GetVersion();
 
-                Console.WriteLine($"Adding {id}");
+                _logger.Info($"Adding package {id} v{version}");
 
                 var frameworks = package.GetSupportedFrameworks();
                 var needed = _reducer.GetNearest(desiredFramework, frameworks);
@@ -114,7 +115,7 @@ namespace NuGetOffline
 
                 foreach (var dependency in dependencies)
                 {
-                    var versions = await finder.GetAllVersionsAsync(dependency.Id, _cache, _logger, token);
+                    var versions = await finder.GetAllVersionsAsync(dependency.Id, _cache, _nugetLogger, token);
                     var version = dependency.VersionRange.FindBestMatch(versions);
 
                     downloadQueue.Enqueue((dependency.Id, version));
@@ -129,7 +130,7 @@ namespace NuGetOffline
             var finder = await _repository.GetResourceAsync<FindPackageByIdResource>();
             var ms = new MemoryStream();
 
-            if (await finder.CopyNupkgToStreamAsync(name, version, ms, _cache, _logger, token))
+            if (await finder.CopyNupkgToStreamAsync(name, version, ms, _cache, _nugetLogger, token))
             {
                 ms.Position = 0;
 

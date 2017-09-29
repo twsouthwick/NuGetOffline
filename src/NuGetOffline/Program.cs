@@ -1,5 +1,4 @@
 ﻿using Autofac;
-using NuGet.Common;
 using NuGet.Protocol.Core.Types;
 using System;
 using System.IO;
@@ -51,31 +50,49 @@ namespace NuGetOffline
                  .AsSelf()
                  .InstancePerLifetimeScope();
 
-            builder.Register<IFolder>(ctx =>
+            builder.Register(ctx =>
             {
                 var o = ctx.Resolve<DownloadOptions>();
 
+                IFolder CreateFolder<T>()
+                    where T : IFolder
+                {
+                    var factory = ctx.Resolve<Func<string, T>>();
+
+                    return factory(o.OutputPath);
+                }
+
                 if (o.ZipResults)
                 {
-                    return new ZipArchiveFolder(o.OutputPath);
+                    return CreateFolder<ZipArchiveFolder>();
                 }
                 else
                 {
-                    return new FileSystemFolder(o.OutputPath);
+                    return CreateFolder<FileSystemFolder>();
                 }
             })
             .Named<IFolder>(nameof(IFolder))
             .SingleInstance();
 
+            builder.RegisterType<FileSystemFolder>();
+            builder.RegisterType<ZipArchiveFolder>();
+            builder.RegisterType<MsbuildFileBuilder>();
+
             builder.RegisterInstance(Console.Out)
                 .As<TextWriter>();
 
-            builder.RegisterType<NuGetTextWriterLogger>()
+            builder.RegisterType<TextWriterLogger>()
                 .As<ILogger>()
+                .As<NuGet.Common.ILogger>()
                 .SingleInstance();
 
-            builder.RegisterDecorator<IFolder>(t => new MsbuildFileBuilder(t), nameof(IFolder))
-                .SingleInstance();
+            builder.RegisterDecorator<IFolder>((ctx, folder) =>
+            {
+                var factory = ctx.Resolve<Func<IFolder, MsbuildFileBuilder>>();
+
+                return factory(folder);
+            }, nameof(IFolder))
+            .SingleInstance();
 
             return builder.Build();
         }

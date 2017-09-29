@@ -15,9 +15,11 @@ namespace NuGetOffline
         /// Initializes a new instance of the <see cref="ZipArchiveFolder"/> class.
         /// </summary>
         /// <param name="path">Path to write file</param>
-        public ZipArchiveFolder(string path)
+        public ZipArchiveFolder(string path, ILogger logger)
         {
             _archive = new ZipArchive(File.OpenWrite(path), ZipArchiveMode.Create);
+
+            logger.Verbose($"Creating output zip archive: {path}");
         }
 
         /// <inheritdoc/>
