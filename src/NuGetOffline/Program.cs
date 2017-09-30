@@ -14,6 +14,10 @@ namespace NuGetOffline
     {
         private static async Task Main(string[] args)
         {
+            var version = typeof(Program).Assembly.GetName().Version;
+
+            Console.WriteLine($"NuGetOffline v{version}{Environment.NewLine}");
+
             try
             {
                 var options = DownloadOptionsBuilder.Parse(args);
