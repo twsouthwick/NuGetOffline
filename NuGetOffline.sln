@@ -3,7 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGetOffline", "src\NuGetOffline\NuGetOffline.csproj", "{5B3C7BC6-4460-43A7-8398-7C0BA6B438C1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuGetOffline", "src\NuGetOffline\NuGetOffline.csproj", "{5B3C7BC6-4460-43A7-8398-7C0BA6B438C1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{CF653010-7A5E-48A5-964A-AA70DFF407FF}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+		Directory.Build.targets = Directory.Build.targets
+		GitVersion.yml = GitVersion.yml
+		NuGet.config = NuGet.config
+		rules.ruleset = rules.ruleset
+		stylecop.json = stylecop.json
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
