@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>net46</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -10,5 +10,6 @@
     <PackageReference Include="NuGet.Client" Version="4.2.0" />
     <PackageReference Include="NuGet.Protocol.Core.v3" Version="4.2.0" />
     <PackageReference Include="System.CommandLine" Version="0.1.0-e170406-3" />
+    <PackageReference Include="System.ValueTuple" Version="4.3.0" />
   </ItemGroup>
 </Project>
