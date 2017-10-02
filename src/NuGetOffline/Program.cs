@@ -86,6 +86,10 @@ namespace NuGetOffline
             builder.RegisterType<ZipArchiveFolder>();
             builder.RegisterType<MsbuildFileBuilder>();
 
+            builder.RegisterType<ReflectionOnlyAssemblyNameFinder>()
+                .As<IAssemblyNameFinder>()
+                .SingleInstance();
+
             builder.RegisterInstance(Console.Out)
                 .As<TextWriter>();
 

@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -13,9 +16,12 @@ namespace NuGetOffline
     {
         private readonly IFolder _other;
         private readonly ILogger _logger;
+        private readonly IAssemblyNameFinder _assemblyNameFinder;
+
         private readonly List<(string name, string fullName)> _references = new List<(string, string)>();
         private readonly List<string> _targets = new List<string>();
         private readonly List<string> _props = new List<string>();
+        private readonly List<(string name, AssemblyName assembly)> _redirects = new List<(string, AssemblyName)>();
 
         private static readonly XNamespace NS = "http://schemas.microsoft.com/developer/msbuild/2003";
 
@@ -23,19 +29,20 @@ namespace NuGetOffline
         /// Initializes a new instance of the <see cref="MsbuildFileBuilder"/> class.
         /// </summary>
         /// <param name="other">Folder to delegate to</param>
-        public MsbuildFileBuilder(IFolder other, ILogger logger)
+        public MsbuildFileBuilder(IFolder other, ILogger logger, IAssemblyNameFinder assemblyNameFinder)
         {
             _other = other;
             _logger = logger;
+            _assemblyNameFinder = assemblyNameFinder;
         }
 
         /// <inheritdoc/>
-        public async Task AddAsync(string name, Stream stream, bool isReference)
+        public async Task AddAsync(string name, Stream stream, ReferenceInfo referenceInfo)
         {
             var bytes = GetEntryBytes(stream);
-            var fullName = GetReferenceName(name, bytes);
+            var assemblyName = GetReferenceAssemblyName(name, bytes);
 
-            _logger.Verbose($"Adding {fullName}");
+            _logger.Verbose($"Adding {assemblyName?.FullName ?? name}");
 
             switch (Path.GetExtension(name).ToUpperInvariant())
             {
@@ -46,9 +53,16 @@ namespace NuGetOffline
                     _props.Add(name);
                     break;
                 case ".DLL":
-                    if (isReference)
+                    Debug.Assert(assemblyName != null);
+
+                    if (referenceInfo == ReferenceInfo.Reference || referenceInfo == ReferenceInfo.ReferenceWithRedirect)
                     {
-                        _references.Add((name, fullName));
+                        _references.Add((name, assemblyName.FullName));
+                    }
+
+                    if (referenceInfo == ReferenceInfo.ReferenceWithRedirect)
+                    {
+                        _redirects.Add((name, assemblyName));
                     }
 
                     break;
@@ -56,22 +70,23 @@ namespace NuGetOffline
 
             using (var ms = new MemoryStream(bytes))
             {
-                await _other.AddAsync(name, ms, isReference);
+                await _other.AddAsync(name, ms, referenceInfo);
             }
         }
 
         /// <inheritdoc/>
         public async Task SaveAsync()
         {
-            await AddDocument("NuGet.Imports.props", CreatePropsFile());
-            await AddDocument("NuGet.Imports.targets", CreateTargetsFile());
+            await AddDocumentAsync("NuGet.Imports.props", CreatePropsFile());
+            await AddDocumentAsync("NuGet.Imports.targets", CreateTargetsFile());
+            await AddDocumentAsync("App.config", CreateAppConfig());
 
             await _other.SaveAsync();
 
-            _logger.Info("In order to add this to a project, please import the .props file at the top of the csproj/vbproj of interest, the .targets at bottom");
+            _logger.Info("In order to add this to a project, please import the .props file at the top of the csproj/vbproj of interest, the .targets at bottom and import the binding redirects in App.config");
         }
 
-        private async Task AddDocument(string name, XDocument document)
+        private async Task AddDocumentAsync(string name, XDocument document)
         {
             using (var ms = new MemoryStream())
             {
@@ -79,7 +94,7 @@ namespace NuGetOffline
 
                 ms.Position = 0;
 
-                await _other.AddAsync(name, ms, false);
+                await _other.AddAsync(name, ms, ReferenceInfo.None);
             }
         }
 
@@ -120,6 +135,26 @@ namespace NuGetOffline
             return new XDocument(element);
         }
 
+        private XDocument CreateAppConfig()
+        {
+            XNamespace NS = "urn:schemas-microsoft-com:asm.v1";
+            XElement BuildDependency(AssemblyName name)
+            {
+                var culture = string.IsNullOrEmpty(name.CultureName) ? "neutral" : name.CultureName;
+                var publicKeyToken = BitConverter.ToString(name.GetPublicKeyToken()).Replace("-", string.Empty).ToLowerInvariant();
+
+                return new XElement(NS + "dependentAssembly",
+                    new XElement(NS + "assemblyIdentity", new XAttribute("name", name.Name), new XAttribute("publicKeyToken", publicKeyToken), new XAttribute("culture", culture)),
+                    new XElement(NS + "bindingRedirect", new XAttribute("oldVersion", $"0.0.0.0-{name.Version}"), new XAttribute("newVersion", name.Version)));
+            }
+
+            var redirects = _redirects.Select(r => BuildDependency(r.assembly));
+
+            return new XDocument(new XElement("configuration",
+                new XElement("runtime",
+                new XElement(NS + "assemblyBinding", redirects))));
+        }
+
         private static byte[] GetEntryBytes(Stream stream)
         {
             using (var ms = new MemoryStream())
@@ -130,15 +165,14 @@ namespace NuGetOffline
             }
         }
 
-        private static string GetReferenceName(string name, byte[] bytes)
+        private AssemblyName GetReferenceAssemblyName(string name, byte[] bytes)
         {
             if (!name.EndsWith(".dll", System.StringComparison.OrdinalIgnoreCase))
             {
-                return name;
+                return null;
             }
 
-            var assembly = Assembly.ReflectionOnlyLoad(bytes);
-            return assembly.FullName;
+            return _assemblyNameFinder.GetAssemblyName(bytes);
         }
 
         private static string GetPath(string path) => $@"$(MSBuildThisFileDirectory)\{path}";

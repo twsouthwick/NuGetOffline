@@ -23,7 +23,7 @@ namespace NuGetOffline
         }
 
         /// <inheritdoc/>
-        public async Task AddAsync(string name, Stream stream, bool isReference)
+        public async Task AddAsync(string name, Stream stream, ReferenceInfo referenceInfo)
         {
             using (var entry = _archive.CreateEntry(name).Open())
             {

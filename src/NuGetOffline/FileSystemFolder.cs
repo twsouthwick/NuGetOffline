@@ -26,7 +26,7 @@ namespace NuGetOffline
         }
 
         /// <inheritdoc/>
-        public async Task AddAsync(string name, Stream stream, bool isReference)
+        public async Task AddAsync(string name, Stream stream, ReferenceInfo referenceInfo)
         {
             var path = new FileInfo(Path.Combine(_path, name));
 

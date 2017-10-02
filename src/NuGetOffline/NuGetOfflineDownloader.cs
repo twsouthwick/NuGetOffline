@@ -72,7 +72,7 @@ namespace NuGetOffline
                     {
                         var itemPath = Path.Combine(id, version.ToString(), item.path).Replace("/", "\\");
 
-                        await folder.AddAsync(itemPath, stream, item.isReference);
+                        await folder.AddAsync(itemPath, stream, item.referenceInfo);
                     }
                 }
             }

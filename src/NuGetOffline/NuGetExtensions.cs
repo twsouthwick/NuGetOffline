@@ -1,6 +1,8 @@
 ﻿using NuGet.Frameworks;
 using NuGet.Packaging;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace NuGetOffline
@@ -16,19 +18,24 @@ namespace NuGetOffline
         /// <param name="package">Package to search in</param>
         /// <param name="framework">Framework to search for</param>
         /// <returns>A collection of paths with the package</returns>
-        public static IEnumerable<(string path, bool isReference)> GetFrameworkItems(this PackageArchiveReader package, NuGetFramework framework)
+        public static IEnumerable<(string path, ReferenceInfo referenceInfo)> GetFrameworkItems(this PackageArchiveReader package, NuGetFramework framework)
         {
-            IEnumerable<(string, bool)> GetFrameworkItems(IEnumerable<FrameworkSpecificGroup> items, bool isReference)
+            IEnumerable<(string, ReferenceInfo)> GetFrameworkItems(IEnumerable<FrameworkSpecificGroup> items, Func<ICollection<string>, ReferenceInfo> referenceInfo)
             {
-                return items
+                var frameworkItems = items
                     .Where(item => item.TargetFramework.IsAny || item.TargetFramework == framework)
                     .SelectMany(item => item.Items)
-                    .Select(i => (i, isReference));
+                    .ToList();
+
+                var names = new HashSet<string>(frameworkItems.Select(Path.GetFileName), StringComparer.OrdinalIgnoreCase);
+
+                return frameworkItems
+                    .Select(i => (i, referenceInfo(names)));
             }
 
-            var libs = GetFrameworkItems(package.GetLibItems(), true);
-            var build = GetFrameworkItems(package.GetBuildItems(), false);
-            var tools = GetFrameworkItems(package.GetToolItems(), false);
+            var libs = GetFrameworkItems(package.GetLibItems(), names => names.Contains("ensureRedirect.xml") ? ReferenceInfo.ReferenceWithRedirect : ReferenceInfo.Reference);
+            var build = GetFrameworkItems(package.GetBuildItems(), _ => ReferenceInfo.None);
+            var tools = GetFrameworkItems(package.GetToolItems(), _ => ReferenceInfo.None);
 
             return libs.Concat(build).Concat(tools);
         }
