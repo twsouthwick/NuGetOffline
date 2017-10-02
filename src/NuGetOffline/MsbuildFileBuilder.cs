@@ -29,7 +29,7 @@ namespace NuGetOffline
         }
 
         /// <inheritdoc/>
-        public Task AddAsync(string name, Stream stream)
+        public Task AddAsync(string name, Stream stream, bool isReference)
         {
             _logger.Verbose($"Adding {name}");
 
@@ -42,11 +42,14 @@ namespace NuGetOffline
                     _props.Add(name);
                     break;
                 case ".DLL":
-                    _references.Add(name);
+                    if (isReference)
+                    {
+                        _references.Add(name);
+                    }
                     break;
             }
 
-            return _other.AddAsync(name, stream);
+            return _other.AddAsync(name, stream, isReference);
         }
 
         /// <inheritdoc/>
@@ -68,7 +71,7 @@ namespace NuGetOffline
 
                 ms.Position = 0;
 
-                await _other.AddAsync(name, ms);
+                await _other.AddAsync(name, ms, false);
             }
         }
 

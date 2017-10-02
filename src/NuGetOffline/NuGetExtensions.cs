@@ -16,18 +16,19 @@ namespace NuGetOffline
         /// <param name="package">Package to search in</param>
         /// <param name="framework">Framework to search for</param>
         /// <returns>A collection of paths with the package</returns>
-        public static IEnumerable<string> GetFrameworkItems(this PackageArchiveReader package, NuGetFramework framework)
+        public static IEnumerable<(string path, bool isReference)> GetFrameworkItems(this PackageArchiveReader package, NuGetFramework framework)
         {
-            IEnumerable<string> GetFrameworkItems(IEnumerable<FrameworkSpecificGroup> items)
+            IEnumerable<(string, bool)> GetFrameworkItems(IEnumerable<FrameworkSpecificGroup> items, bool isReference)
             {
                 return items
                     .Where(item => item.TargetFramework.IsAny || item.TargetFramework == framework)
-                    .SelectMany(item => item.Items);
+                    .SelectMany(item => item.Items)
+                    .Select(i => (i, isReference));
             }
 
-            var libs = GetFrameworkItems(package.GetLibItems());
-            var build = GetFrameworkItems(package.GetBuildItems());
-            var tools = GetFrameworkItems(package.GetToolItems());
+            var libs = GetFrameworkItems(package.GetLibItems(), true);
+            var build = GetFrameworkItems(package.GetBuildItems(), false);
+            var tools = GetFrameworkItems(package.GetToolItems(), false);
 
             return libs.Concat(build).Concat(tools);
         }

@@ -68,11 +68,11 @@ namespace NuGetOffline
 
                 foreach (var item in package.GetFrameworkItems(needed))
                 {
-                    using (var stream = package.GetStream(item))
+                    using (var stream = package.GetStream(item.path))
                     {
-                        var itemPath = Path.Combine(id, version.ToString(), item).Replace("/", "\\");
+                        var itemPath = Path.Combine(id, version.ToString(), item.path).Replace("/", "\\");
 
-                        await folder.AddAsync(itemPath, stream);
+                        await folder.AddAsync(itemPath, stream, item.isReference);
                     }
                 }
             }

@@ -13,7 +13,8 @@ namespace NuGetOffline
         /// </summary>
         /// <param name="name">The name of the item</param>
         /// <param name="stream">A stream to be written</param>
-        Task AddAsync(string name, Stream stream);
+        /// <param name="isReference">Flag if item is a reference item from the lib folder</param>
+        Task AddAsync(string name, Stream stream, bool isReference);
 
         /// <summary>
         /// Completes the folder generation
