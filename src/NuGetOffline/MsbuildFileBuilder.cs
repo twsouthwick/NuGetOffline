@@ -74,11 +74,11 @@ namespace NuGetOffline
 
         private XDocument CreatePropsFile()
         {
-            var element = new XElement(NS + "Project", new XAttribute(NS + "ToolsVersion", "12.0"));
+            var element = new XElement(NS + "Project", new XAttribute("ToolsVersion", "12.0"));
 
             foreach (var prop in _props)
             {
-                element.Add(new XElement(NS + "Import", new XAttribute(NS + "Project", GetPath(prop))));
+                element.Add(new XElement(NS + "Import", new XAttribute("Project", GetPath(prop))));
             }
 
             return new XDocument(element);
@@ -86,20 +86,24 @@ namespace NuGetOffline
 
         private XDocument CreateTargetsFile()
         {
-            var element = new XElement(NS + "Project", new XAttribute(NS + "ToolsVersion", "12.0"));
+            var element = new XElement(NS + "Project", new XAttribute("ToolsVersion", "12.0"));
 
             var itemGroup = new XElement(NS + "ItemGroup");
 
             foreach (var reference in _references)
             {
-                itemGroup.Add(new XElement(NS + "Reference", new XAttribute(NS + "Include", GetPath(reference))));
+                var referenceElement = new XElement(NS + "Reference",
+                    new XAttribute("Include", Path.GetFileName(reference)),
+                    new XElement(NS + "HintPath", GetPath(reference)));
+
+                itemGroup.Add(referenceElement);
             }
 
             element.Add(itemGroup);
 
             foreach (var target in _targets)
             {
-                element.Add(new XElement(NS + "Import", new XAttribute(NS + "Project", GetPath(target))));
+                element.Add(new XElement(NS + "Import", new XAttribute("Project", GetPath(target))));
             }
 
             return new XDocument(element);
