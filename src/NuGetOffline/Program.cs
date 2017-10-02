@@ -2,6 +2,7 @@
 using NuGet.Protocol.Core.Types;
 using System;
 using System.IO;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -10,7 +11,7 @@ namespace NuGetOffline
     /// <summary>
     /// Entry point for applications
     /// </summary>
-    internal class Program
+    internal static class Program
     {
         private static async Task Main(string[] args)
         {
@@ -25,6 +26,9 @@ namespace NuGetOffline
                 using (var container = CreateContainer(options))
                 {
                     var folder = container.Resolve<IFolder>();
+                    var logger = container.Resolve<ILogger>();
+
+                    logger.Verbose($"Version: {GetVersion()}");
 
                     await container.Resolve<NuGetOfflineDownloader>().RunAsync(options, folder, CancellationToken.None);
 
@@ -99,6 +103,11 @@ namespace NuGetOffline
             .SingleInstance();
 
             return builder.Build();
+        }
+
+        private static string GetVersion()
+        {
+            return typeof(Program).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
         }
     }
 }
