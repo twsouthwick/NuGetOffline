@@ -51,7 +51,7 @@ namespace NuGetOffline
         public void LogErrorSummary(string data) => Write(Level.ErrorSummary, data);
 
         /// <inheritdoc/>
-        public void LogInformation(string data) => Write(Level.Info, data);
+        public void LogInformation(string data) => Write(Level.Verbose, data);
 
         /// <inheritdoc/>
         public void LogInformationSummary(string data) => Write(Level.Summary, data);

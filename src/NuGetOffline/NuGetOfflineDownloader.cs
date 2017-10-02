@@ -66,20 +66,11 @@ namespace NuGetOffline
                 var frameworks = package.GetSupportedFrameworks();
                 var needed = _reducer.GetNearest(desiredFramework, frameworks);
 
-                var libs = package.GetLibItems()
-                    .Where(item => item.TargetFramework == needed)
-                    .SelectMany(item => item.Items);
-                var build = package.GetBuildItems()
-                    .Where(item => item.TargetFramework == needed)
-                    .SelectMany(item => item.Items);
-
-                var items = libs.Concat(build).ToList();
-
-                foreach (var item in items)
+                foreach (var item in package.GetFrameworkItems(needed))
                 {
                     using (var stream = package.GetStream(item))
                     {
-                        var itemPath = Path.Combine(id, version.ToString(), item);
+                        var itemPath = Path.Combine(id, version.ToString(), item).Replace("/", "\\");
 
                         await folder.AddAsync(itemPath, stream);
                     }
