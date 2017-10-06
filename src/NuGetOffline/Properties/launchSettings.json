@@ -2,7 +2,7 @@
   "profiles": {
     "NuGetOffline": {
       "commandName": "Project",
-      "commandLineArgs": "--framework net40 --name Microsoft.Bcl.Async --version 1.0.168 --verbose"
+      "commandLineArgs": "--framework net40 --name DocumentFormat.OpenXml --version 2.7.2 --verbose"
     }
   }
 }
