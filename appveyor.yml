@@ -1,4 +1,7 @@
-image: Visual Studio 2017
+os: Visual Studio 2017
+
+enviornment:
+  image: Visual Studio 2017
 
 build:
   verbosity: minimal
