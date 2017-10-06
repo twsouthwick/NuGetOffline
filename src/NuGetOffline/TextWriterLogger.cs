@@ -21,6 +21,18 @@ namespace NuGetOffline
             _options = options;
         }
 
+        private enum Level
+        {
+            Warning,
+            Info,
+            Debug,
+            Verbose,
+            Minimal,
+            Summary,
+            ErrorSummary,
+            Error
+        }
+
         /// <inheritdoc/>
         public void Info(string message) => Write(Level.Info, message);
 
@@ -85,18 +97,6 @@ namespace NuGetOffline
                 default:
                     throw new ArgumentOutOfRangeException(nameof(level), level, "Unknown verbosity level");
             }
-        }
-
-        private enum Level
-        {
-            Warning,
-            Info,
-            Debug,
-            Verbose,
-            Minimal,
-            Summary,
-            ErrorSummary,
-            Error
         }
     }
 }

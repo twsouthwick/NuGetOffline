@@ -137,22 +137,22 @@ namespace NuGetOffline
 
         private XDocument CreateAppConfig()
         {
-            XNamespace NS = "urn:schemas-microsoft-com:asm.v1";
+            XNamespace @namespace = "urn:schemas-microsoft-com:asm.v1";
             XElement BuildDependency(AssemblyName name)
             {
                 var culture = string.IsNullOrEmpty(name.CultureName) ? "neutral" : name.CultureName;
                 var publicKeyToken = BitConverter.ToString(name.GetPublicKeyToken()).Replace("-", string.Empty).ToLowerInvariant();
 
-                return new XElement(NS + "dependentAssembly",
-                    new XElement(NS + "assemblyIdentity", new XAttribute("name", name.Name), new XAttribute("publicKeyToken", publicKeyToken), new XAttribute("culture", culture)),
-                    new XElement(NS + "bindingRedirect", new XAttribute("oldVersion", $"0.0.0.0-{name.Version}"), new XAttribute("newVersion", name.Version)));
+                return new XElement(@namespace + "dependentAssembly",
+                    new XElement(@namespace + "assemblyIdentity", new XAttribute("name", name.Name), new XAttribute("publicKeyToken", publicKeyToken), new XAttribute("culture", culture)),
+                    new XElement(@namespace + "bindingRedirect", new XAttribute("oldVersion", $"0.0.0.0-{name.Version}"), new XAttribute("newVersion", name.Version)));
             }
 
             var redirects = _redirects.Select(r => BuildDependency(r.assembly));
 
             return new XDocument(new XElement("configuration",
                 new XElement("runtime",
-                new XElement(NS + "assemblyBinding", redirects))));
+                new XElement(@namespace + "assemblyBinding", redirects))));
         }
 
         private static byte[] GetEntryBytes(Stream stream)

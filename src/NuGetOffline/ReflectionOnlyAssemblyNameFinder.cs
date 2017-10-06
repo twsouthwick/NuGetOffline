@@ -1,15 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace NuGetOffline
 {
-
     /// <summary>
     /// An implementation of <see cref="IAssemblyNameFinder"/> that uses the reflection-only load context
     /// </summary>
