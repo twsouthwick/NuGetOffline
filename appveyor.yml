@@ -7,7 +7,7 @@ build:
   verbosity: minimal
 
 build_script:
-  -cmd : msbuild /t:restore;build /p:Configuration=Release /m .\NuGetOffline.sln  /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - cmd : msbuild /t:restore;build /p:Configuration=Release /m .\NuGetOffline.sln  /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 
 artifacts:
 - path: bin\Release\NuGetOffline
