@@ -78,11 +78,6 @@ namespace NuGetOffline
             }
         }
 
-        private static bool Equals(NuGetFramework framework1, NuGetFramework framework2)
-        {
-            return DefaultFrameworkNameProvider.Instance.CompareEquivalentFrameworks(framework1, framework2) == 0;
-        }
-
         private async Task<IEnumerable<PackageArchiveReader>> GetAllPackagesAsync(DownloadOptions options, NuGetFramework desiredFramework, CancellationToken token)
         {
             var finder = await _repository.GetResourceAsync<FindPackageByIdResource>();
@@ -99,8 +94,10 @@ namespace NuGetOffline
 
                 result.Add(package);
 
-                var dependencies = package.GetPackageDependencies()
-                    .Where(item => Equals(item.TargetFramework, desiredFramework))
+                var frameworks = package.GetSupportedFrameworks();
+                var needed = _reducer.GetNearest(desiredFramework, frameworks);
+
+                var dependencies = package.GetPackageDependencies(desiredFramework)
                     .SelectMany(item => item.Packages)
                     .ToList();
 

@@ -23,7 +23,7 @@ namespace NuGetOffline
             IEnumerable<(string, ReferenceInfo)> GetFrameworkItems(IEnumerable<FrameworkSpecificGroup> items, Func<ICollection<string>, ReferenceInfo> referenceInfo)
             {
                 var frameworkItems = items
-                    .Where(item => item.TargetFramework.IsAny || item.TargetFramework == framework)
+                    .Where(framework)
                     .SelectMany(item => item.Items)
                     .ToList();
 
@@ -38,6 +38,25 @@ namespace NuGetOffline
             var tools = GetFrameworkItems(package.GetToolItems(), _ => ReferenceInfo.None);
 
             return libs.Concat(build).Concat(tools);
+        }
+
+        /// <summary>
+        /// Get dependencies from a package for a given framework
+        /// </summary>
+        /// <param name="package">Package to find dependencies</param>
+        /// <param name="framework">Framework to search for</param>
+        /// <returns>Filtered list of dependencies</returns>
+        public static IEnumerable<PackageDependencyGroup> GetPackageDependencies(this PackageArchiveReader package, NuGetFramework framework)
+        {
+            return package.GetPackageDependencies()
+                    .Where(framework);
+        }
+
+        private static IEnumerable<T> Where<T>(this IEnumerable<T> items, NuGetFramework framework)
+            where T : IFrameworkSpecific
+        {
+            return items
+                .Where(item => item.TargetFramework.IsAny || item.TargetFramework == framework);
         }
     }
 }
