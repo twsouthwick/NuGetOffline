@@ -16,5 +16,12 @@ namespace NuGetOffline
             : base(message)
         {
         }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NuGetDownloaderException"/> class.
+        /// </summary>
+        public NuGetDownloaderException()
+        {
+        }
     }
 }

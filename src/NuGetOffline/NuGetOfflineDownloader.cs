@@ -97,6 +97,11 @@ namespace NuGetOffline
                 var frameworks = package.GetSupportedFrameworks();
                 var needed = _reducer.GetNearest(desiredFramework, frameworks);
 
+                if (needed == null)
+                {
+                    throw new UnsupportedFrameworkException(package, desiredFramework);
+                }
+
                 var dependencies = package.GetPackageDependencies(desiredFramework)
                     .SelectMany(item => item.Packages)
                     .ToList();
